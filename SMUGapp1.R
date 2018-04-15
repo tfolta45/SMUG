@@ -16,17 +16,33 @@ ui <- fluidPage(
     column(12, p("Welcome to SMUG. We know what model you need! Tell us up to two variables and we'll perform basic summary and inference procedures for them.")),
     column(12, p("Before ")),
     column(12, selectInput('data', 'Choose a Variable Situation', c('One Continuous', 'One Categorical'))),
-    column(12, uiOutput("UI")),
-    column(12,plotOutput("Box")),
-    column(12,plotOutput("Hist")),
-    column(12,verbatimTextOutput("fivenumsum"))
+    column(12, uiOutput("select")),
+    column(12, uiOutput("radio")),
+    column(12, uiOutput("onecont")),
+    column(12, uiOutput("onecat"))
   )  
 )
 
 server <- function(input,output) {
-  output$UI <- renderUI({ switch(input$data,
+  
+  output$select <- renderUI({ switch(input$data,
                           'One Continuous' = selectInput("ContVar1","Continuous Variables", choices = names(c)),
                           'One Categorical' = selectInput("CatVar","Categorical Variables",choices = names(d)))
+  })
+  
+  output$radio <- renderUI({ switch(input$data,
+                          'One Continuous' = radioButtons('tool', 'Choose a tool', c('Five Number Summary', 'Histogram')),
+                          'One Categorical' = radioButtons('tool1', 'Choose a tool', c('Frequency Table', 'Proportion Table')))
+  })
+  
+  output$onecont <- renderUI({ switch(input$tool,
+                            'Five Number Summary' = verbatimTextOutput('fivenumsum'),
+                            'Histogram' = plotOutput('Hist'))
+  })
+  
+  output$onecat <- renderUI({ switch(input$tool1,
+                                     'Frequency Table' = ,
+                                     'Proportion Table' = )
   })
   
   output$Box <- renderPlot({
@@ -40,6 +56,7 @@ server <- function(input,output) {
   output$fivenumsum <- renderPrint({
     summary(input$ContVar1)
   })
+  
 }
 
 shinyApp(ui = ui, server = server)
