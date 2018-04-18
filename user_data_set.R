@@ -1,75 +1,48 @@
 library(shiny)
+library(ggplot2)
+library(dplyr)
 ui <- fluidPage(
-        titlePanel(""),
-        sidebarLayout(
-                
-                sidebarPanel(
-                        fileInput("file1", "Choose CSV File",
-                                  multiple = TRUE,
-                                  accept = c("text/csv",
-                                             "text/comma-separated-values,text/plain",
-                                             ".csv")),
-                        
-                        checkboxInput("header", "Header", TRUE),
-                        
-                        radioButtons("sep", "Separator",
-                                     choices = c(Comma =",",
-                                                 Semicolon = ";",
-                                                 Tab = "\t"),
-                                     selected = ","),
-                        
-                        radioButtons("disp", "Display",
-                                     choices = c(Head = "head",
-                                                 All = "all"),
-                                     selected = "head"),
-                        uiOutput('column')),
-                
-                mainPanel(
-                        tableOutput("contents"),
-                        textOutput(outputId = "result")
-                )))
-library(shiny)
-require(randtests)
+         sidebarLayout(
+                 
+                 sidebarPanel(
+                         fileInput(inputId  = "data", 
+                                   label    = "Upload your data set",
+                                   multiple = TRUE,
+                                   accept = c("text/csv",
+                                              "text/comma-separated-values,text/plain",
+                                              ".csv")),
+                         checkboxInput(inputId = "header", label = "Header", value = TRUE),
+                         radioButtons(inputId  = "dem", 
+                                      label    = "Delimiter",
+                                      choices  = c(Comma =",", Semicolon = ";", Tab = "\t"),
+                                      selected = ","),
+                         radioButtons(inputId  = "disp", 
+                                      label    = "Display",
+                                      choices  = c(Head = "head", All = "all"),
+                                      selected = "head")
+                 ),
+                 mainPanel(
+                         tableOutput(outputId = "DataFrame")
+                         
+                 )
+         )
+)
 server <- function(input, output) {
-        
         read_data <- reactive({
-                req(input$file1)
-                df <- read.csv(input$file1$datapath,
+                req(input$data)
+                df <- read.csv(input$data$datapath,
                                header = input$header,
-                               sep = input$sep,
-                               quote = input$quote,
+                               sep    = input$dem,
+                               quote  = input$quote,
                                stringsAsFactors = FALSE)
-                
                 if(input$disp == "head") {
                         return(head(df))
-                }
-                else {
+                } 
+                else if (input$disp == "all") {
                         return(df)
-                }})
-        
-        column_names <- reactive({
-                names(read_data())
+                }
         })
-        
-        bartels_rank <- reactive({
-                x <- read_data()[[input$column]]
-                bartels.rank.test(x, alternative = 'two.sided', pvalue="normal")
-        })
-        
-        output$column = renderUI({
-                selectInput("column", 
-                            label = "Select column", 
-                            choices = column_names(),
-                            selected = column_names()[1])
-        })
-        
-        output$contents <- renderTable({
-                read_data()
-        })
-        
-        output$result <- renderText({
-                bartels_rank() %>% as.character()
-        })
-        
+        output$DataFrame<- renderTable(read_data())
 }
 shinyApp(ui = ui, server = server)
+ 
