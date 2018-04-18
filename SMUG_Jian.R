@@ -23,8 +23,6 @@ ui <- fluidPage(
                                       value    = TRUE),
                         selectInput('x', "Numerical Variable (X)", ""),
                         selectInput('y', "Numerical Variable (Y)", "" , selected = ""),
-                        selectInput('u', "Categorical Variable (U)", "", selected = ""),
-                        selectInput('v', "Categorical Variable (V)", "", selected = ""),
                         br(), br(),
                         h5("Built with",
                            img(src = "https://www.rstudio.com/wp-content/uploads/2014/04/shiny.png", height = "30px"),
@@ -39,17 +37,15 @@ ui <- fluidPage(
                                     tabPanel(title = "Data", 
                                              br(),
                                              tableOutput(outputId = "DataFrame")),
-                                    tabPanel(title = "Plot",
-                                             plotOutput(outputId = "myplot1"),
+                                    tabPanel(title = "Plots",
+                                             plotOutput(outputId = "histogram"),
                                              br(), br(),
-                                             plotOutput(outputId = "myplot2")),
-                                             br(), br(),
-                                             plotOutput(outputId = "myplot3"))
-                        
-                        
+                                             plotOutput(outputId = "scatter_plot"))
+                        )
                 )
         )
 )
+
 server <- function(input, output, session) {
         read_data <- reactive({
                 req(input$data)
@@ -62,10 +58,6 @@ server <- function(input, output, session) {
                                   choices = names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)]))
                 updateSelectInput(session, inputId = 'y', label = 'Numerical Variable (Y) ',
                                   choices =  names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)])[2])
-                updateSelectInput(session, inputId = 'u', label = 'Categorical Variable (U)',
-                                  choices =  names(df[ ,sapply(df, is.factor)]), selected = names(df[ ,sapply(df, is.factor)]))
-                updateSelectInput(session, inputId = 'v', label = "Categorical Variable (V)",
-                                  choices =  names(df[ ,sapply(df, is.factor)]), selected = names(df[ ,sapply(df, is.factor)])[2])
                 if(input$show_result) {
                         return(df)
                 } 
@@ -73,22 +65,18 @@ server <- function(input, output, session) {
         output$DataFrame<- renderTable(read_data())
         observeEvent(input$show_result, {
                 if(input$show_result){
-                        showTab(inputId = "tabspanel", target = c("Data", "Plot"), select = TRUE)
+                        showTab(inputId = "tabspanel", target = c("Data", "Plots"), select = TRUE)
                 } else {
-                        hideTab(inputId = "tabspanel", target = c("Data", "Plot"))
+                        hideTab(inputId = "tabspanel", target = c("Data", "Plots"))
                 }
         })
-        output$myplot1 <- renderPlot({
+        output$histogram <- renderPlot({
                 ggplot(data = read_data(), aes_string(x = input$x)) +
-                        geom_histogram() + theme_bw()
+                        geom_histogram()
                 })
-        output$myplot2 <- renderPlot({
+        output$scatter_plot <- renderPlot({
                 ggplot(data = read_data(), aes_string(x = input$x, y = input$y)) +
-                        geom_point() + theme_bw()
-        })
-        output$myplot3 <- renderPlot({
-                ggplot(data = read_data(), aes_string(input$x, input$u)) + 
-                        geom_boxplot(aes_string(group=input$u)) + theme_bw()
+                        geom_point()
         })
 }
 shinyApp(ui = ui, server = server)
