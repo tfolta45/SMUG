@@ -18,8 +18,8 @@ ui <- fluidPage(
                                      label    = "Delimiter",
                                      choices  = c(Comma =",", Semicolon = ";", Tab = "\t"),
                                      selected = ","),
-                        checkboxInput(inputId  = "show_data", 
-                                      label    = "Show data table",
+                        checkboxInput(inputId  = "show_result", 
+                                      label    = "Show the result",
                                       value    = TRUE),
                         selectInput('x', "X-axis", ""),
                         selectInput('y', "Y-axis", "" , selected = ""),
@@ -60,16 +60,16 @@ server <- function(input, output, session) {
                                   choices = names(df), selected = names(df)[2])
                 updateSelectInput(session, inputId = 'z', label = 'Color by:',
                                   choices = names(df), selected = names(df)[3])
-                if(input$show_data) {
+                if(input$show_result) {
                         return(df)
                 } 
         })
         output$DataFrame<- renderTable(read_data())
-        observeEvent(input$show_data, {
-                if(input$show_data){
-                        showTab(inputId = "tabspanel", target = "Data", select = TRUE)
+        observeEvent(input$show_result, {
+                if(input$show_result){
+                        showTab(inputId = "tabspanel", target = c("Data", "Plot"), select = TRUE)
                 } else {
-                        hideTab(inputId = "tabspanel", target = "Data")
+                        hideTab(inputId = "tabspanel", target = c("Data", "Plot"))
                 }
         })
         output$scatterplot <- renderPlot({
