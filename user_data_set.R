@@ -1,9 +1,9 @@
 library(shiny)
 library(ggplot2)
 library(dplyr)
+library(shinythemes)
 ui <- fluidPage(
-         sidebarLayout(
-                 
+         theme = shinytheme("superhero"),
                  sidebarPanel(
                          fileInput(inputId  = "data", 
                                    label    = "Upload your data set",
