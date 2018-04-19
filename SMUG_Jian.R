@@ -23,6 +23,8 @@ ui <- fluidPage(
                                       value    = TRUE),
                         selectInput('x', "Numerical Variable (X)", ""),
                         selectInput('y', "Numerical Variable (Y)", "" , selected = ""),
+                        selectInput('z', "Categorical Variable (Z)", ""),
+                        
                         br(), br(),
                         h5("Built with",
                            img(src = "https://www.rstudio.com/wp-content/uploads/2014/04/shiny.png", height = "30px"),
@@ -56,12 +58,15 @@ server <- function(input, output, session) {
                                stringsAsFactors = TRUE)
                 updateSelectInput(session, inputId = 'x', label = 'Numerical Variable (X)',
                                   choices = names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)]))
-                updateSelectInput(session, inputId = 'y', label = 'Numerical Variable (Y) ',
+                updateSelectInput(session, inputId = 'y', label = 'Numerical Variable (Y)',
                                   choices =  names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)])[2])
+                updateSelectInput(session, inputId = 'z', label = 'Categorical Variable (Z) ',
+                                       choices = names(which(sapply(df, is.factor))), selected = names(which(sapply(df, is.factor))))
+                
                 if(input$show_result) {
                         return(df)
-                } 
-        })
+                }
+})
         output$DataFrame<- renderTable(read_data())
         observeEvent(input$show_result, {
                 if(input$show_result){
