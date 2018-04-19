@@ -3,9 +3,9 @@ library(ggplot2)
 library(dplyr)
 library(shinythemes)
 ui <- fluidPage(
+        titlePanel(title = "Selected Models User Guided", windowTitle = "SMUG"),
         theme= shinytheme("superhero"),
         sidebarLayout(
-                
                 sidebarPanel(
                         fileInput(inputId  = "data", 
                                   label    = "Upload your data set",
@@ -63,8 +63,7 @@ server <- function(input, output, session) {
                 updateSelectInput(session, inputId = 'y', label = 'Numerical Variable (Y)',
                                   choices =  names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)])[2])
                 updateSelectInput(session, inputId = 'z', label = 'Categorical Variable (Z) ',
-                                       choices = names(which(sapply(df, is.factor))), selected = names(which(sapply(df, is.factor))))
-                
+                                  choices = names(which(sapply(df, is.factor))), selected = names(which(sapply(df, is.factor))))
                 if(input$show_result) {
                         return(df)
                 }
