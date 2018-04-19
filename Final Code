@@ -1,0 +1,155 @@
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(shinythemes)
+ui <- fluidPage(
+  titlePanel(title = "Selected Models User Guided", windowTitle = "SMUG"),
+  theme= shinytheme("superhero"),
+  sidebarLayout(
+    sidebarPanel(
+      fileInput(inputId  = "data", 
+                label    = "Upload your data set",
+                multiple = TRUE,
+                accept = c("text/csv",
+                           "text/comma-separated-values,text/plain",
+                           ".csv")),
+      checkboxInput(inputId = "header", label = "Header", value = TRUE),
+      radioButtons(inputId  = "dem", 
+                   label    = "Delimiter",
+                   choices  = c(Comma =",", Semicolon = ";", Tab = "\t"),
+                   selected = ","),
+      checkboxInput(inputId  = "show_result", 
+                    label    = "Show the result",
+                    value    = TRUE),
+      selectInput('x', "Numerical Variable (X)", ""),
+      selectInput('y', "Numerical Variable (Y)", "" , selected = ""),
+      selectInput('z', "Categorical Variable (Z)", ""),
+      selectInput('w', "Categorical Variable (W)", ""),
+      
+      br(), br(),
+      h5("Built with",
+         img(src = "https://www.rstudio.com/wp-content/uploads/2014/04/shiny.png", height = "30px"),
+         "by",
+         img(src = "https://www.rstudio.com/wp-content/uploads/2014/07/RStudio-Logo-Blue-Gray.png", height = "30px"),
+         ".")
+      
+    ),
+    mainPanel(
+      tabsetPanel(id   = "tabspanel",
+                  type = "tabs",
+                  tabPanel(title = "Data", 
+                           br(),
+                           tableOutput(outputId = "DataFrame")),
+                  tabPanel(title = "Plots",
+                           plotOutput(outputId = "histogram"),
+                           br(), br(),
+                           plotOutput(outputId = "scatter_plot"),
+                           br(), br(),
+                           plotOutput(outputId = "box_plot")),
+                  tabPanel(title = "Tests",
+                           verbatimTextOutput('fivenumsum'),
+                           br(), br(),
+                           verbatimTextOutput('freqTab'),
+                           br(), br(),
+                           verbatimTextOutput('propTab'),
+                           br(), br(),
+                           verbatimTextOutput('linearmodel'),
+                           br(), br(),
+                           verbatimTextOutput('twowayfreqTab'),
+                           br(), br(),
+                           verbatimTextOutput('twowaypropTab'),
+                           br(), br(),
+                           verbatimTextOutput('chisquaretest'),
+                           br(), br(),
+                           verbatimTextOutput('anovattest'))
+      )
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  read_data <- reactive({
+    req(input$data)
+    df <- read.csv(input$data$datapath,
+                   header = input$header,
+                   sep    = input$dem,
+                   quote  = input$quote,
+                   stringsAsFactors = TRUE)
+    updateSelectInput(session, inputId = 'x', label = 'Numerical Variable (X)',
+                      choices = names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)]))
+    updateSelectInput(session, inputId = 'y', label = 'Numerical Variable (Y)',
+                      choices =  names(df[ ,sapply(df, is.numeric)]), selected = names(df[ ,sapply(df, is.numeric)])[2])
+    updateSelectInput(session, inputId = 'z', label = 'Categorical Variable (Z) ',
+                      choices = names(which(sapply(df, is.factor))), selected = names(which(sapply(df, is.factor))))
+    updateSelectInput(session, inputId = 'w', label = 'Categorical Variable (W) ',
+                      choices = names(which(sapply(df, is.factor))), selected = names(which(sapply(df, is.factor)))[2])
+    output$fivenumsum <- renderPrint({
+      cat('Five Number Summary for X','\n','\n')
+      summary(df[,input$x])
+    })
+    output$freqTab <- renderPrint({
+      cat('Frequency Table for Z','\n')
+      table(df[,input$z])
+    })
+    output$propTab <- renderPrint({
+      cat('Proportion Table for Z','\n')
+      prop.table(table(df[,input$z]))
+    })
+    output$linearmodel <- renderPrint({
+      lmdata <- as.data.frame(df[,c(input$x,input$y)])
+      cat('Linear Model for Regression of Y on X. lmdata[,2] is Y and lmdata[,1] is X.','\n')
+      summary(lm(lmdata[,2] ~ lmdata[,1]))
+    })
+    output$twowayfreqTab <- renderPrint({
+      Frequencies1 <- as.data.frame(df[,c(input$z,input$w)])
+      cat('Two Way Frequency Table: Z listed vertically, W listed horizontally','\n')
+      table(Frequencies1[,1],Frequencies1[,2])
+    })
+    output$twowaypropTab <- renderPrint({
+      Proportions1 <- as.data.frame(df[,c(input$z,input$w)])
+      cat('Two Way Proportion Table: Z listed vertically, W listed horizontally','\n')
+      prop.table(table(Proportions1[,1],Proportions1[,2]))
+    })
+    output$chisquaretest <- renderPrint({
+      Frequencies1 <- as.data.frame(df[,c(input$z,input$w)])
+      freq <- table(Frequencies1[,1],Frequencies1[,2])
+      cat('Chi-Square Test for Independence of Variables Z and W','\n')
+      chisq.test(freq)
+    })
+    output$anovattest <- renderPrint({
+      anova_data <- as.data.frame(df[,c(input$x,input$z)])
+      cat('ANOVA / T-test for Difference of Means of X split by Z. anova_data[,2] is Z','\n','\n')
+      summary(aov(anova_data[,1]~anova_data[,2], anova_data))
+    })
+    if(input$show_result) {
+      return(df)
+    }
+  })
+  
+  output$DataFrame<- renderTable(read_data())
+  
+  observeEvent(input$show_result, {
+    if(input$show_result){
+      showTab(inputId = "tabspanel", target = c("Data", "Plots", "Tests"), select = TRUE)
+    } else {
+      hideTab(inputId = "tabspanel", target = c("Data", "Plots", "Tests"))
+    }
+  })
+  
+  output$histogram <- renderPlot({
+    ggplot(data = read_data(), aes_string(x = input$x)) +
+      geom_histogram(color = "black", fill = "white") + theme_bw()
+  })
+  
+  output$scatter_plot <- renderPlot({
+    ggplot(data = read_data(), aes_string(x = input$x, y = input$y)) +
+      geom_point() + theme_bw()
+  })
+  
+  output$box_plot <- renderPlot({
+    ggplot(data = read_data(), aes_string(x=input$z, y=input$x)) + 
+      geom_boxplot() + theme_bw()
+  })
+  
+}
+shinyApp(ui = ui, server = server)
