@@ -42,7 +42,9 @@ ui <- fluidPage(
                                     tabPanel(title = "Plots",
                                              plotOutput(outputId = "histogram"),
                                              br(), br(),
-                                             plotOutput(outputId = "scatter_plot"))
+                                             plotOutput(outputId = "scatter_plot"),
+                                             br(), br(),
+                                             plotOutput(outputId = "box_plot"))
                         )
                 )
         )
@@ -82,6 +84,10 @@ server <- function(input, output, session) {
         output$scatter_plot <- renderPlot({
                 ggplot(data = read_data(), aes_string(x = input$x, y = input$y)) +
                         geom_point()
+        })
+        output$box_plot <- renderPlot({
+                ggplot(data = read_data( ), aes_string(x=input$z, y=input$x)) + 
+                        geom_boxplot()
         })
 }
 shinyApp(ui = ui, server = server)
